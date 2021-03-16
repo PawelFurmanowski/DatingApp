@@ -22,6 +22,8 @@ namespace API.Controllers
         //Do zwracania listy userów użyjemy IEnumerable
         //IEnumerable pozwala na prostą iterację po na kolekcji 
         //Zamiast IEnumerable moglibyśmy użyć List<AppUser> ale lista oferuje zbyt wiele metod a my potrzebujemy jedynie zwrócić userów
+        //zmiana kodu synchronicznego na asynchroniczny => dodanie async przed metodą następnie owinięcie zwracanej wartości w TASK<>
+        //zmiana metod na asynchroniczne i dodanie await przed metodą asynchroniczną
         [HttpGet]
         public async Task< ActionResult<IEnumerable<AppUser>> >GetUsers()
         {
