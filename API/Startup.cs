@@ -40,9 +40,11 @@ namespace API
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
             });
+            services.AddCors();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        // KOLEJNOŚĆ W CONFIGURE MOTHOD JEST KLUCZOWA
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -55,6 +57,17 @@ namespace API
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            // Niezbędne aby klient mógł użyć metod http np. do pobrania wszystkich userów 
+            // app.UseCors musi znajdować się pomiędzy UseRouting a autentication 
+            // najpierw dostarczamy url ścieżkę następnie zezwalamy na metody użycie metod z inngeo orgin'a
+            // a następnie autoryzujemy 
+            // Zezwalamy na dowolny nagłówek np. authentication header z aplikacji angulara
+            // Zezwalamy na dowolne metody np. put request, get request
+            // Ustalamy konkretne źródło pochodzenia dla nagłówków oraz metod
+
+            //w skrócie możesz wszystkot to => AllowAnyHeader().AllowAnyMethod() TYLKO gdy pochodzi z tego =>  WithOrigins("http://localhost:4200")
+            app.UseCors( policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200"));
 
             app.UseAuthorization();
 
