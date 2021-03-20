@@ -67,7 +67,7 @@ namespace API
             // Ustalamy konkretne źródło pochodzenia dla nagłówków oraz metod
 
             //w skrócie możesz wszystkot to => AllowAnyHeader().AllowAnyMethod() TYLKO gdy pochodzi z tego =>  WithOrigins("http://localhost:4200")
-            app.UseCors( policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200"));
+            app.UseCors( policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:4200"));
 
             app.UseAuthorization();
 
