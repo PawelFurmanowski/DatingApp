@@ -42,6 +42,36 @@ namespace API.Controllers
             return user;
         }
 
+        [HttpPost("login")]
+        public async Task<ActionResult<AppUser>> Login(LoginDto loginDto)
+        {
+            //używamy singleordefault ponieważ jeśli znajdziemy więcej niż jedną wartość otrzymamy błąd
+            //w przeciwieństwie do firstordefault która zwróci null jeśli nie znajdzie wartości
+            var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == loginDto.Username.ToLower());
+
+            //po raz kolejny 
+            //możemy użyć unauthorized ponieważ kożystamy z ActionResult co pozwala na zwracanie statusów
+            if(user == null) 
+                return Unauthorized("Invalid username");
+
+            //przeciążenie hmac inicjalizowane z wcześniej wygenerowanym byte[]
+            using var hmac = new HMACSHA512(user.PasswordSalt);
+
+            //generowanie hash'a na podstawie podanego hasła podczas logowania
+            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
+
+            //pętla sprawdzająca czy obliczony przez nas hash z podanego hasła zgadza się z hashem zapisanym na koncie
+            //jeśli się ne zgadza zwracamy Unouthorized
+            for(int i = 0; i < computedHash.Length; i++)
+            {
+                if(computedHash[i] != user.PasswordHash[i])
+                    return Unauthorized("Invalid password");
+            }
+
+            return user;
+
+        }
+
         //Metoda pomagająca stwierdzić czy user istnieje już w naszej bazie czy nie zwraca true lub false
         private async Task<bool> UserExist(string username)
         {
