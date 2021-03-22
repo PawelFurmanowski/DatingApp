@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.Data;
 using API.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,7 @@ namespace API.Controllers
         //zmiana kodu synchronicznego na asynchroniczny => dodanie async przed metodą następnie owinięcie zwracanej wartości w TASK<>
         //zmiana metod na asynchroniczne i dodanie await przed metodą asynchroniczną
         [HttpGet]
+        [AllowAnonymous]
         public async Task< ActionResult<IEnumerable<AppUser>> >GetUsers()
         {
             //ToList() potrzebuje LINQ
@@ -35,7 +37,7 @@ namespace API.Controllers
 
         //  api/users/3 => zwróci pojedyńczego usera
         // zwracamy pojedyńczego usera więc IEnumerable nie jest nam potrzbene (to nie jest lista)
-         
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<AppUser>>GetUser(int id)
         {

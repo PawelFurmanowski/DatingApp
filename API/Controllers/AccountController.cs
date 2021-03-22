@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using API.Data;
 using API.DTOs;
 using API.Entities;
+using API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,19 +13,21 @@ namespace API.Controllers
     public class AccountController : BaseApiController
     {
         private readonly DataContext _context;
-        public AccountController(DataContext context)
+        private readonly ITokenService _tokenService;
+        public AccountController(DataContext context, ITokenService tokenService)
         {
+            _tokenService = tokenService;
             _context = context;
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<AppUser>> Register(RegisterDto registerDto)
+        public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
             // Sprawdzamy czy user istnieje,
             // jeśli istnieje zwracamy BadRequest 
             //możemy zwrócić BadRequest ponieważ używamy ActionResult
             //BadRequest zwraca status 400
-            if(await UserExist(registerDto.Username))
+            if (await UserExist(registerDto.Username))
                 return BadRequest("Username is taken");
 
             using var hmac = new HMACSHA512();
@@ -39,11 +42,15 @@ namespace API.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return user;
+            return new UserDto
+            {
+                Username = user.UserName,
+                Token = _tokenService.CreateToken(user)
+            };
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<AppUser>> Login(LoginDto loginDto)
+        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
             //używamy singleordefault ponieważ jeśli znajdziemy więcej niż jedną wartość otrzymamy błąd
             //w przeciwieństwie do firstordefault która zwróci null jeśli nie znajdzie wartości
@@ -51,7 +58,7 @@ namespace API.Controllers
 
             //po raz kolejny 
             //możemy użyć unauthorized ponieważ kożystamy z ActionResult co pozwala na zwracanie statusów
-            if(user == null) 
+            if (user == null)
                 return Unauthorized("Invalid username");
 
             //przeciążenie hmac inicjalizowane z wcześniej wygenerowanym byte[]
@@ -62,13 +69,17 @@ namespace API.Controllers
 
             //pętla sprawdzająca czy obliczony przez nas hash z podanego hasła zgadza się z hashem zapisanym na koncie
             //jeśli się ne zgadza zwracamy Unouthorized
-            for(int i = 0; i < computedHash.Length; i++)
+            for (int i = 0; i < computedHash.Length; i++)
             {
-                if(computedHash[i] != user.PasswordHash[i])
+                if (computedHash[i] != user.PasswordHash[i])
                     return Unauthorized("Invalid password");
             }
 
-            return user;
+            return new UserDto
+            {
+                Username = user.UserName,
+                Token = _tokenService.CreateToken(user)
+            };
 
         }
 

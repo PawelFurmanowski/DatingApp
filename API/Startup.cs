@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using API.Data;
+using API.Extentions;
+using API.Interfaces;
+using API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -12,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 namespace API
@@ -30,17 +36,15 @@ namespace API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<DataContext>(options =>
-            {
-                //UseSqlite potrzebuje usinga microsoft.EntityFrameworkCore
-                options.UseSqlite(_config.GetConnectionString("DefaultConnection"));
-            });
+            //metoda rozszerzająca (zawiera nasze serwisy)
+            services.AddApplicationServices(_config);
+
             services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
-            });
+            services.AddSwagger();
             services.AddCors();
+
+            //metoda rozszerzająca (zawiera nasz serwis autentykacji)
+            services.AddIdentityServices(_config);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -66,9 +70,11 @@ namespace API
             // Zezwalamy na dowolne metody np. put request, get request
             // Ustalamy konkretne źródło pochodzenia dla nagłówków oraz metod
 
-            //w skrócie możesz wszystkot to => AllowAnyHeader().AllowAnyMethod() TYLKO gdy pochodzi z tego =>  WithOrigins("https://localhost:4200")
+            //w skrócie możesz wszystko to => AllowAnyHeader().AllowAnyMethod() TYLKO gdy pochodzi z tego =>  WithOrigins("https://localhost:4200")
             app.UseCors( policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:4200"));
 
+            //potrzebne do autentykacji musi znajdować się po CORS'ach i przed autoryzacją
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
