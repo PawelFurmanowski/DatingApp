@@ -21,12 +21,22 @@ namespace API.Data
 
         public async Task<AppUser> GetUserByUsernameAsync(string username)
         {
-            return await _context.Users.SingleOrDefaultAsync(x => x.UserName == username );
+              //include jest potrzebnyu aby pobierać zdjęcia z serwera ponieważ zwykły ToListAsync() nie zwraca zdjęć tylko
+            // zwraca null 
+            // konieczne jest taki sposób w przypadku powiązanych kolekcji 
+            return await _context.Users
+            .Include(p => p.Photos)
+            .SingleOrDefaultAsync(x => x.UserName == username );
         }
 
         public async Task<IEnumerable<AppUser>> GetUsersAsync()
         {
-            return await _context.Users.ToListAsync();
+            //include jest potrzebnyu aby pobierać zdjęcia z serwera ponieważ zwykły ToListAsync() nie zwraca zdjęć tylko
+            // zwraca null 
+            // konieczne jest taki sposób w przypadku powiązanych kolekcji 
+            return await _context.Users
+            .Include(p => p.Photos)
+            .ToListAsync();
         }
 
         public async Task<bool> SaveAllAsync()
