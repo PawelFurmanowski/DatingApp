@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using API.Data;
+using API.DTOs;
 using API.Entities;
 using API.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,12 +15,14 @@ namespace API.Controllers
     [Authorize]
     public class UsersController : BaseApiController
     {
-        
+        private readonly IMapper _mapper;
+
         private readonly IUserRepository _userRepository;
-        public UsersController(IUserRepository userRepository)
+        public UsersController(IUserRepository userRepository, IMapper mapper)
         {
+            _mapper = mapper;
             _userRepository = userRepository;
-           
+
         }
 
         //Zwracamy ACTIONRESULT w <> oznaczamy typ zmiennych które zwracamy
@@ -28,7 +32,7 @@ namespace API.Controllers
         //zmiana kodu synchronicznego na asynchroniczny => dodanie async przed metodą następnie owinięcie zwracanej wartości w TASK<>
         //zmiana metod na asynchroniczne i dodanie await przed metodą asynchroniczną
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
         {
             /*
             //Przed wprowadzeniem repository pattern
@@ -39,9 +43,11 @@ namespace API.Controllers
             return users;
             */
 
-            
-            var users = await _userRepository.GetUsersAsync();
-            //Musimy zwrócić userów przez OK(users) ponieważ nie można uzyskać w inny sposób ActionResult
+
+            var users = await _userRepository.GetMembersAsync();
+
+           
+
             return Ok(users);
 
         }
@@ -50,7 +56,7 @@ namespace API.Controllers
         // zwracamy pojedyńczego usera więc IEnumerable nie jest nam potrzbene (to nie jest lista)
 
         [HttpGet("{username}")]
-        public async Task<ActionResult<AppUser>> GetUser(string username)
+        public async Task<ActionResult<MemberDto>> GetUser(string username)
         {
             /*
             //przed repository pattern
@@ -61,8 +67,8 @@ namespace API.Controllers
             return user;
 
             */
-            var user = await _userRepository.GetUserByUsernameAsync(username);
-            return user;
+            return await _userRepository.GetMemberAsync(username);
+            
         }
 
 
