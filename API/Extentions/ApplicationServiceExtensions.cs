@@ -18,7 +18,7 @@ namespace API.Extentions
             //transient ->  czas życia taki jak metody 
             
             services.AddScoped<ITokenService, TokenService>();
-
+            services.AddScoped<IUserRepository, UserRepository>();
 
             services.AddDbContext<DataContext>(options =>
             {
