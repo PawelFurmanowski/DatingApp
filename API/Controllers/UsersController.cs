@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using API.Data;
 using API.DTOs;
@@ -69,6 +70,29 @@ namespace API.Controllers
             */
             return await _userRepository.GetMemberAsync(username);
             
+        }
+
+        [HttpPut]
+        public async Task<ActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
+        {
+            //powinniśmy dostać username z tokenu któr został pobrany podczas autentykacji 
+            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userRepository.GetUserByUsernameAsync(username);
+
+            //Mapujemy obiekt memberUpdateDto na user autoMapper "przepisuje" wartości
+                //user.City = memberUpdateDto.City
+                //user.Country = mebberUpdateDto.Country ...
+            _mapper.Map(memberUpdateDto, user);
+
+            //aktualizujemy usera w bazie danych
+            _userRepository.Update(user);
+
+            //jeśli uda się poprawinie zapisać zmiany kończymy funkcję jeśli nie zwracamy badRequest
+            if(await _userRepository.SaveAllAsync()) 
+                return NoContent();
+            
+            return BadRequest("Failed to update user");
+
         }
 
 

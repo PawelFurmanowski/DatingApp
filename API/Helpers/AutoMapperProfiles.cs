@@ -14,7 +14,7 @@ namespace API.Helpers
                 //ForMember potrzebne jest aby pobrać Url do głównego zdjęcia
                 //ForMember oznacza na którą property chcemy wpłynąć
                     //destination - którą property wpływamy
-                    //options - oznaczamy z kąd chcemy mapować 
+                    //options - oznaczamy skąd chcemy mapować 
                         //src - wybieramy źródło ( pośród zdjęć szukamy zdjęcia głównego czyli IsMain i wybieramy z niego URL)
 
             //podsumowująć wybieramy na co chcemy mapować następnie szukamy tego co chcemy tam wsadzić 
@@ -24,6 +24,9 @@ namespace API.Helpers
                 .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.CalculateAge()));
             //mapujemy Photo na PhotoDto
             CreateMap<Photo,PhotoDto>();
+
+            //mapujemy zaktualizowane dane na AppUser
+            CreateMap<MemberUpdateDto, AppUser>();
         }
     }
 }
