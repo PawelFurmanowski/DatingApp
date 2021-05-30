@@ -13,6 +13,9 @@ namespace API.Extentions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration config)
         {
+
+            services.Configure<CloudinarySettings>(config.GetSection("CloudinarySettings"));
+
             //uzywamy servisu scoped aby określić długość życia servisu.
             //Mamy do wyboru trzy opcje 
             //singleton ->  czas życia taki jak aplikacji 
@@ -20,6 +23,7 @@ namespace API.Extentions
             //transient ->  czas życia taki jak metody 
             
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IPhotoService, PhotoService>();
             services.AddScoped<IUserRepository, UserRepository>();
             
 
