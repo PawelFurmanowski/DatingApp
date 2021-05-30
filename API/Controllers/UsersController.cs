@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using API.Data;
 using API.DTOs;
 using API.Entities;
+using API.Extentions;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,10 +19,12 @@ namespace API.Controllers
     public class UsersController : BaseApiController
     {
         private readonly IMapper _mapper;
+        private readonly IPhotoService _photoService;
 
         private readonly IUserRepository _userRepository;
-        public UsersController(IUserRepository userRepository, IMapper mapper)
+        public UsersController(IUserRepository userRepository, IMapper mapper, IPhotoService photoService)
         {
+            _photoService = photoService;
             _mapper = mapper;
             _userRepository = userRepository;
 
@@ -47,7 +51,7 @@ namespace API.Controllers
 
             var users = await _userRepository.GetMembersAsync();
 
-           
+
 
             return Ok(users);
 
@@ -69,29 +73,68 @@ namespace API.Controllers
 
             */
             return await _userRepository.GetMemberAsync(username);
-            
+
         }
 
         [HttpPut]
         public async Task<ActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
         {
             //powinniśmy dostać username z tokenu któr został pobrany podczas autentykacji 
-            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.GetUsername();
             var user = await _userRepository.GetUserByUsernameAsync(username);
 
             //Mapujemy obiekt memberUpdateDto na user autoMapper "przepisuje" wartości
-                //user.City = memberUpdateDto.City
-                //user.Country = mebberUpdateDto.Country ...
+            //user.City = memberUpdateDto.City
+            //user.Country = mebberUpdateDto.Country ...
             _mapper.Map(memberUpdateDto, user);
 
             //aktualizujemy usera w bazie danych
             _userRepository.Update(user);
 
             //jeśli uda się poprawinie zapisać zmiany kończymy funkcję jeśli nie zwracamy badRequest
-            if(await _userRepository.SaveAllAsync()) 
+            if (await _userRepository.SaveAllAsync())
                 return NoContent();
-            
+
             return BadRequest("Failed to update user");
+
+        }
+
+        [HttpPost("add-photo")]
+        public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
+        {
+            // 1 - potrzebujemy usera więc go wczytujemy po nazwie
+            var user = await _userRepository.GetUserByUsernameAsync(User.GetUsername());
+
+            //2 - następnie wczytujemy wynik z PhotoService
+            var result = await _photoService.AddPhotoAsync(file);
+
+            //3 - sprawdzamy czy nie ma żadnego błędu podczas wczytywania zdjęcia 
+            if(result.Error != null)
+            {
+                return BadRequest(result.Error.Message);
+            }
+
+            //4 - tworzymy nowe zdjęcie jeśli przeszlićmy wcześniejszy punkt
+            var photo = new Photo 
+            {
+                Url = result.SecureUrl.AbsoluteUri,
+                PublicId = result.PublicId
+            };
+
+            //5 - sprawdzamy czy user ma jakieś zdjęcia, jeśli nie ma to ustawiamy pierwsze zdjęcie jako main
+            if(user.Photos.Count == 0)
+                photo.IsMain = true;
+            
+            //6 - dodajemy zdjęcie 
+            user.Photos.Add(photo);
+
+            //7 - zwracamy zdjęcie
+            if(await _userRepository.SaveAllAsync())
+                return _mapper.Map<PhotoDto>(photo);
+
+            //8 - jeśłi nie udało się zwrócić zdjęcia zwracamy bad request
+            return BadRequest("Problem adding photo");
+
 
         }
 
