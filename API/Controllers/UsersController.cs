@@ -60,7 +60,7 @@ namespace API.Controllers
         //  api/users/3 => zwróci pojedyńczego usera
         // zwracamy pojedyńczego usera więc IEnumerable nie jest nam potrzbene (to nie jest lista)
 
-        [HttpGet("{username}")]
+        [HttpGet("{username}", Name = "GetUser")]
         public async Task<ActionResult<MemberDto>> GetUser(string username)
         {
             /*
@@ -130,7 +130,12 @@ namespace API.Controllers
 
             //7 - zwracamy zdjęcie
             if(await _userRepository.SaveAllAsync())
-                return _mapper.Map<PhotoDto>(photo);
+            {
+                // return _mapper.Map<PhotoDto>(photo);
+                return CreatedAtRoute("GetUser", new {username = user.UserName},_mapper.Map<PhotoDto>(photo));
+               
+            }
+               
 
             //8 - jeśłi nie udało się zwrócić zdjęcia zwracamy bad request
             return BadRequest("Problem adding photo");
